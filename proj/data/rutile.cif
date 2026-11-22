@@ -1,0 +1,28 @@
+# Crystallography Open Database 9009083, Wyckoff, Crystal Structures (1963).
+# Unit cell and coordinates transcribed in P1 with all six sites expanded.
+data_rutile
+_chemical_formula_sum 'Ti2 O4'
+_cell_length_a 4.59373
+_cell_length_b 4.59373
+_cell_length_c 2.95812
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_space_group_name_H-M_alt 'P 1'
+_space_group_IT_number 1
+loop_
+_space_group_symop_operation_xyz
+'x, y, z'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Ti1 Ti 0.0     0.0     0.0 1
+Ti2 Ti 0.5     0.5     0.5 1
+O1  O  0.30530 0.30530 0.0 1
+O2  O  0.69470 0.69470 0.0 1
+O3  O  0.80530 0.19470 0.5 1
+O4  O  0.19470 0.80530 0.5 1

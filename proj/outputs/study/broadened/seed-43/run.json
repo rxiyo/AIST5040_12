@@ -1,0 +1,64 @@
+{
+  "seed": 43,
+  "base_cells_per_split": [
+    1800,
+    240,
+    160
+  ],
+  "noise_sd_relative_intensity": 0.01,
+  "wavelength_angstrom": 1.5406,
+  "peak_gaussian_sigma_deg": 0.12,
+  "test_peak_gaussian_sigma_deg": 0.2,
+  "angle_step_deg": 0.1,
+  "parameter_bounds_angstrom": [
+    [
+      4.5,
+      4.69
+    ],
+    [
+      2.9,
+      3.02
+    ]
+  ],
+  "windows_deg": {
+    "full": [
+      20,
+      70
+    ],
+    "low_information": [
+      24,
+      33
+    ],
+    "contrast": [
+      33,
+      42
+    ]
+  },
+  "hit_tolerance_angstrom": 0.02,
+  "separation_angstrom": 0.01,
+  "proposal_budget": 36,
+  "grid_sides": {
+    "dense": 41,
+    "budget_matched": 6
+  },
+  "offline_template_seconds": {
+    "grid_dense": 1.909388799998851,
+    "grid_budget": 0.040861299999960465
+  },
+  "mlp_training_seconds": 5.252503100000467,
+  "mixture_training": {
+    "iterations": 260,
+    "termination": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+    "validation_nll_normalized": -3.2480949591697015,
+    "elapsed_seconds": 4.131442500001867
+  },
+  "figure_test_index": 0,
+  "dependencies": {
+    "numpy": "2.5.5",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.9.1",
+    "matplotlib": "3.11.2",
+    "pymatgen": "2026.10.24",
+    "pymatgen-core": "2026.10.31"
+  }
+}
