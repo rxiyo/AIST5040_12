@@ -1,0 +1,70 @@
+{
+  "output": "/Users/ruyi/Desktop/cuhk/aist5040/AIST5040_12/outputs/acu",
+  "seed": 42,
+  "train": 600,
+  "validation": 80,
+  "test": 40,
+  "noise": 0.01,
+  "epochs": 80,
+  "batch_size": 64,
+  "hidden": 64,
+  "latent": 4,
+  "lr": 0.001,
+  "beta": 1.0,
+  "mdn_iterations": 120,
+  "proposals": 27,
+  "grid_side": 3,
+  "dense_side": 9,
+  "bounds": [
+    [
+      4.5,
+      4.69
+    ],
+    [
+      2.9,
+      3.02
+    ],
+    [
+      0.2953,
+      0.3153
+    ]
+  ],
+  "tolerances": [
+    0.02,
+    0.02,
+    0.002
+  ],
+  "windows_deg": {
+    "full": [
+      20,
+      70
+    ],
+    "low_information": [
+      24,
+      33
+    ],
+    "contrast": [
+      33,
+      42
+    ]
+  },
+  "grid_candidates": {
+    "grid_budget": 27,
+    "grid_dense": 729
+  },
+  "data_seconds": 0.3524791670497507,
+  "grid_precompute_seconds": {
+    "grid_budget": 0.013799207983538508,
+    "grid_dense": 0.425854624947533
+  },
+  "mdn_training": {
+    "iterations": 120,
+    "termination": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+    "validation_nll_normalized": -1.3408702473235186,
+    "seconds": 0.21744687505997717
+  },
+  "cvae_training_seconds": 1.4217905000550672,
+  "cvae_best_epoch": 80,
+  "cvae_sampling": "decoder mean plus fixed Gaussian noise, clipped to bounds",
+  "notes": "Simulated rutile, independently uniform parameters, idealized simulator. CPU timing is hardware dependent."
+}

@@ -1,0 +1,12 @@
+{
+  "source_run": "/Users/ruyi/Desktop/cuhk/aist5040/AIST5040_12/outputs/acu_original_scale_seed42",
+  "grid_shape": [
+    6,
+    6,
+    6
+  ],
+  "candidate_count": 216,
+  "test_cells": 160,
+  "grid_precompute_seconds": 0.10244145907927305,
+  "notes": "Same saved held-out spectra. Candidates ranked by visible profile MSE; no deduplication."
+}

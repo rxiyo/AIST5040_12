@@ -1,0 +1,75 @@
+{
+  "output": "outputs/acu_original_scale_seed42",
+  "seed": 42,
+  "train": 1800,
+  "validation": 240,
+  "test": 160,
+  "noise": 0.01,
+  "epochs": 150,
+  "batch_size": 64,
+  "hidden": 64,
+  "latent": 4,
+  "lr": 0.001,
+  "beta": 1.0,
+  "mdn_iterations": 260,
+  "proposals": 36,
+  "grid_side": 3,
+  "grid_shape": [
+    3,
+    3,
+    4
+  ],
+  "dense_side": 41,
+  "bounds": [
+    [
+      4.5,
+      4.69
+    ],
+    [
+      2.9,
+      3.02
+    ],
+    [
+      0.2953,
+      0.3153
+    ]
+  ],
+  "tolerances": [
+    0.02,
+    0.02,
+    0.002
+  ],
+  "windows_deg": {
+    "full": [
+      20,
+      70
+    ],
+    "low_information": [
+      24,
+      33
+    ],
+    "contrast": [
+      33,
+      42
+    ]
+  },
+  "grid_candidates": {
+    "grid_budget": 36,
+    "grid_dense": 68921
+  },
+  "data_seconds": 1.0343336670193821,
+  "grid_precompute_seconds": {
+    "grid_budget": 0.018341834074817598,
+    "grid_dense": 33.06179487495683
+  },
+  "mdn_training": {
+    "iterations": 260,
+    "termination": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+    "validation_nll_normalized": -2.1386721753932845,
+    "seconds": 1.3856303329812363
+  },
+  "cvae_training_seconds": 6.351959875086322,
+  "cvae_best_epoch": 110,
+  "cvae_sampling": "decoder mean plus fixed Gaussian noise, clipped to bounds",
+  "notes": "Simulated rutile, independently uniform parameters, idealized simulator. CPU timing is hardware dependent."
+}

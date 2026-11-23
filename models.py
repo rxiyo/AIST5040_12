@@ -33,11 +33,15 @@ def normalized_targets(parameters):
 class ConditionalMixture:
     """A small neural density estimator with diagonal Gaussian mixture components."""
 
-    def __init__(self, inputs, hidden=32, components=3):
+    def __init__(self, inputs, hidden=32, components=3, center=CENTER, half_range=HALF_RANGE):
         self.inputs = inputs
         self.hidden = hidden
         self.components = components
-        self.output_size = 5 * components
+        self.center = np.asarray(center)
+        self.half_range = np.asarray(half_range)
+        self.dim = len(self.center)
+        self.stride = 1 + 2 * self.dim
+        self.output_size = self.stride * components
         self.shapes = [(inputs, hidden), (hidden,), (hidden, self.output_size), (self.output_size,)]
         self.splits = np.cumsum([np.prod(shape) for shape in self.shapes])[:-1]
 
@@ -47,10 +51,10 @@ class ConditionalMixture:
     def forward(self, x, weights):
         w1, b1, w2, b2 = self.parameters(weights)
         hidden = np.tanh(x @ w1 + b1)
-        out = (hidden @ w2 + b2).reshape(-1, self.components, 5)
+        out = (hidden @ w2 + b2).reshape(-1, self.components, self.stride)
         log_prob = log_softmax(out[:, :, 0], axis=1)
-        means = np.tanh(out[:, :, 1:3])
-        scale_gate = expit(out[:, :, 3:5])
+        means = np.tanh(out[:, :, 1:1 + self.dim])
+        scale_gate = expit(out[:, :, 1 + self.dim:])
         log_sd = -4.6 + 5 * scale_gate
         return hidden, log_prob, means, scale_gate, log_sd
 
@@ -58,7 +62,7 @@ class ConditionalMixture:
         hidden, log_prob, means, scale_gate, log_sd = self.forward(x, weights)
         sd = np.exp(log_sd)
         z = (y[:, None, :] - means) / sd
-        joint = log_prob - (log_sd + 0.5 * z**2).sum(axis=2) - np.log(2 * np.pi)
+        joint = log_prob - (log_sd + 0.5 * z**2).sum(axis=2) - self.dim / 2 * np.log(2 * np.pi)
         marginal = logsumexp(joint, axis=1)
         loss = -marginal.mean()
         if not gradient:
@@ -83,9 +87,9 @@ class ConditionalMixture:
     def fit(self, x, y, validation_x, validation_y, rng, iterations):
         w1 = rng.normal(0, 1 / np.sqrt(self.inputs), size=self.shapes[0])
         w2 = rng.normal(0, 0.035, size=self.shapes[2])
-        b2 = np.zeros((self.components, 5))
+        b2 = np.zeros((self.components, self.stride))
         b2[:, 2] = np.linspace(-0.35, 0.35, self.components)
-        b2[:, 3:5] = 1.2
+        b2[:, 1 + self.dim:] = 1.2
         initial = np.concatenate((w1.ravel(), np.zeros(self.hidden), w2.ravel(), b2.ravel()))
         self.weights = initial
         self.validation_nll = self.objective(initial, validation_x, validation_y)
@@ -125,4 +129,4 @@ class ConditionalMixture:
         quantile = lower + (upper - lower) * rng.random(lower.shape)
         z = ndtri(np.clip(quantile, 1e-15, 1 - 1e-15))
         samples = means[rows, components] + sd[rows, components] * z
-        return CENTER + HALF_RANGE * np.clip(samples, -1, 1)
+        return self.center + self.half_range * np.clip(samples, -1, 1)
