@@ -84,7 +84,8 @@ class ConditionalMixture:
             np.concatenate([g.ravel() for g in grads]) + 2 * regularization * weights,
         )
 
-    def fit(self, x, y, validation_x, validation_y, rng, iterations):
+    def fit(self, x, y, validation_x, validation_y, rng, iterations, *,
+            validation_score=None, validation_every=1):
         w1 = rng.normal(0, 1 / np.sqrt(self.inputs), size=self.shapes[0])
         w2 = rng.normal(0, 0.035, size=self.shapes[2])
         b2 = np.zeros((self.components, self.stride))
@@ -92,27 +93,41 @@ class ConditionalMixture:
         b2[:, 1 + self.dim:] = 1.2
         initial = np.concatenate((w1.ravel(), np.zeros(self.hidden), w2.ravel(), b2.ravel()))
         self.weights = initial
-        self.validation_nll = self.objective(initial, validation_x, validation_y)
+        def nll(weights):
+            return self.objective(weights, validation_x, validation_y)
+
+        score_weights = nll if validation_score is None else validation_score
+        best_score = score_weights(initial)
+        iteration = 0
 
         def checkpoint(weights):
-            loss = self.objective(weights, validation_x, validation_y)
-            if loss < self.validation_nll:
+            nonlocal best_score
+            score = score_weights(weights)
+            if score < best_score:
                 self.weights = weights.copy()
-                self.validation_nll = loss
+                best_score = score
+
+        def on_step(weights):
+            nonlocal iteration
+            iteration += 1
+            if iteration % validation_every == 0:
+                checkpoint(weights)
 
         result = minimize(
             self.objective, initial, args=(x, y, True), method="L-BFGS-B",
-            jac=True, callback=checkpoint, options={"maxiter": iterations},
+            jac=True, callback=on_step, options={"maxiter": iterations},
         )
         checkpoint(result.x)
+        self.validation_nll = nll(self.weights)
         return {
             "iterations": int(result.nit),
             "termination": str(result.message),
             "validation_nll_normalized": float(self.validation_nll),
+            **({"validation_energy_score": float(best_score)} if validation_score is not None else {}),
         }
 
-    def sample(self, x, count, rng):
-        _, log_prob, means, _, log_sd = self.forward(x, self.weights)
+    def sample(self, x, count, rng, *, weights=None):
+        _, log_prob, means, _, log_sd = self.forward(x, self.weights if weights is None else weights)
         sd = np.exp(log_sd)
         lower_cdf = ndtr((-1 - means) / sd)
         upper_cdf = ndtr((1 - means) / sd)

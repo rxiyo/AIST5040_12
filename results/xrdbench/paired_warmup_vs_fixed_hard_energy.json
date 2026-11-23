@@ -1,0 +1,29 @@
+{
+  "mean": -0.012876013985961696,
+  "ci95": [
+    -0.01454424755154641,
+    -0.01138534117138564
+  ],
+  "n_independent_structures": 512,
+  "bootstrap_repeats": 2000,
+  "dataset_id": "4b24e22300b006f210edeefd797e155873b32c02b19e2a3f88f5775957f3b02e",
+  "split": "test",
+  "view": "full",
+  "metric": "energy_score",
+  "condition": "v0.2",
+  "difference": "A minus B",
+  "lower_is_better": true,
+  "seed_counts": [
+    1,
+    1
+  ],
+  "per_seed_means": [
+    [
+      0.08150322608422315
+    ],
+    [
+      0.09437924007018485
+    ]
+  ],
+  "uncertainty": "CI resamples structures after averaging runs; training variation is shown separately, not combined"
+}

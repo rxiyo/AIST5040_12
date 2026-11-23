@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 from threadpoolctl import threadpool_limits
-from acu_benchmark import ACUSimulator, BOUNDS, summarize
+from acu_benchmark import ACUSimulator, BOUNDS, BUDGET_GRID_SIDE, summarize
 from physics import MASKS, score_grid, visible_profiles
 
 
@@ -24,7 +24,8 @@ def main():
         raise ValueError('Source run uses different parameter bounds')
     truth = data['test_parameters']
     sim = ACUSimulator()
-    axes = [np.linspace(lo, hi, 6) for lo, hi in BOUNDS]
+    shape = [BUDGET_GRID_SIDE] * len(BOUNDS)
+    axes = [np.linspace(lo, hi, side) for (lo, hi), side in zip(BOUNDS, shape)]
     grid = np.stack(np.meshgrid(*axes, indexing='ij'), axis=-1).reshape(-1, 3)
     with threadpool_limits(limits=1):
         start = time.perf_counter()
@@ -46,7 +47,7 @@ def main():
         writer = csv.DictWriter(f, fieldnames=list(metrics[0])); writer.writeheader(); writer.writerows(metrics)
     np.savez_compressed(args.output/'grid216_predictions.npz', **predictions)
     (args.output/'run.json').write_text(json.dumps({
-        'source_run': str(args.run.resolve()), 'grid_shape': [6, 6, 6], 'candidate_count': len(grid),
+        'source_run': str(args.run.resolve()), 'grid_shape': shape, 'candidate_count': len(grid),
         'test_cells': len(truth), 'grid_precompute_seconds': build_seconds,
         'notes': 'Same saved held-out spectra. Candidates ranked by visible profile MSE; no deduplication.'
     }, indent=2))

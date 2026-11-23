@@ -1,5 +1,5 @@
 {
-  "output": "/Users/ruyi/Desktop/cuhk/aist5040/AIST5040_12/outputs/acu",
+  "output": "outputs/acu",
   "seed": 42,
   "train": 600,
   "validation": 80,
@@ -12,8 +12,12 @@
   "lr": 0.001,
   "beta": 1.0,
   "mdn_iterations": 120,
-  "proposals": 27,
-  "grid_side": 3,
+  "proposals": 216,
+  "grid_shape": [
+    6,
+    6,
+    6
+  ],
   "dense_side": 9,
   "bounds": [
     [
@@ -49,22 +53,23 @@
     ]
   },
   "grid_candidates": {
-    "grid_budget": 27,
+    "grid_budget": 216,
     "grid_dense": 729
   },
-  "data_seconds": 0.3524791670497507,
+  "data_seconds": 0.37900870898738503,
   "grid_precompute_seconds": {
-    "grid_budget": 0.013799207983538508,
-    "grid_dense": 0.425854624947533
+    "grid_budget": 0.11755033303052187,
+    "grid_dense": 0.38750716706272215
   },
   "mdn_training": {
     "iterations": 120,
     "termination": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
     "validation_nll_normalized": -1.3408702473235186,
-    "seconds": 0.21744687505997717
+    "seconds": 0.24550820793956518
   },
-  "cvae_training_seconds": 1.4217905000550672,
-  "cvae_best_epoch": 80,
-  "cvae_sampling": "decoder mean plus fixed Gaussian noise, clipped to bounds",
+  "cvae_training_seconds": 2.462074000039138,
+  "cvae_best_epoch": 11,
+  "cvae_parameters": 54294,
+  "cvae_sampling": "conditional Gaussian prior and bounded logit-normal decoder",
   "notes": "Simulated rutile, independently uniform parameters, idealized simulator. CPU timing is hardware dependent."
 }

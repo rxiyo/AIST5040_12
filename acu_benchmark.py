@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 from pymatgen.core import Lattice, Structure
+from scipy.spatial.distance import pdist
 from threadpoolctl import threadpool_limits
 
 from models import ConditionalMixture, SpectrumFeatures
@@ -23,6 +24,10 @@ BOUNDS = np.array([[4.50, 4.69], [2.90, 3.02], [0.2953, 0.3153]])
 CENTER = BOUNDS.mean(axis=1)
 HALF = np.diff(BOUNDS, axis=1).ravel() / 2
 TOL = np.array([0.02, 0.02, 0.002])  # Angstrom, Angstrom, dimensionless
+BUDGET_GRID_SIDE = 6
+CANDIDATE_COUNT = BUDGET_GRID_SIDE**3
+TOP_K = 5
+U_DIVERSITY_SHORTLIST = 20
 
 
 class ACUSimulator(RutileDiffraction):
@@ -54,35 +59,53 @@ def split(sim, rng, size, noise):
 
 
 class CVAE(nn.Module):
-    def __init__(self, inputs, hidden=64, latent=4):
+    """Conditional Gaussian prior and a bounded logit-normal decoder."""
+
+    def __init__(self, inputs, hidden=64, latent=4, target_dim=3):
         super().__init__()
-        self.latent = latent
-        self.encoder = nn.Sequential(nn.Linear(inputs + 3, hidden), nn.ReLU(), nn.Linear(hidden, 2 * latent))
-        self.decoder = nn.Sequential(nn.Linear(inputs + latent, hidden), nn.ReLU(), nn.Linear(hidden, 3), nn.Tanh())
+        self.prior = nn.Sequential(nn.Linear(inputs, hidden), nn.ReLU(), nn.Linear(hidden, 2 * latent))
+        self.encoder = nn.Sequential(nn.Linear(inputs + target_dim, hidden), nn.ReLU(), nn.Linear(hidden, 2 * latent))
+        self.decoder = nn.Sequential(nn.Linear(inputs + latent, hidden), nn.ReLU(), nn.Linear(hidden, 2 * target_dim))
+
+    @staticmethod
+    def normal(outputs):
+        mean, log_sd = outputs.chunk(2, dim=-1)
+        return torch.distributions.Normal(mean, log_sd.clamp(-5, 2).exp())
+
+    @staticmethod
+    def draw(distribution, generator):
+        noise = torch.randn(distribution.loc.shape, dtype=distribution.loc.dtype,
+                            device=distribution.loc.device, generator=generator)
+        return distribution.loc + distribution.scale * noise
 
     def loss(self, x, y, beta, generator):
-        mu, logvar = self.encoder(torch.cat([x, y], dim=-1)).chunk(2, dim=-1)
-        logvar = logvar.clamp(-10, 6)
-        z = mu + torch.exp(.5 * logvar) * torch.randn(mu.shape, generator=generator, device=x.device)
-        recon = self.decoder(torch.cat([x, z], dim=-1))
-        # Fixed Gaussian reconstruction scale in normalized parameter coordinates.
-        reconstruction = (((recon-y) / .2)**2 / 2).sum(dim=1).mean()
-        kl = (-.5 * (1 + logvar - mu.square() - logvar.exp()).sum(dim=1)).mean()
+        prior = self.normal(self.prior(x))
+        posterior = self.normal(self.encoder(torch.cat([x, y], dim=-1)))
+        z = self.draw(posterior, generator)
+        decoded = self.normal(self.decoder(torch.cat([x, z], dim=-1)))
+        # Evaluate y = 2 * sigmoid(t) - 1 via the density of t and the Jacobian.
+        # Keep targets rounded to a bound in floating point inside the support.
+        eps = torch.finfo(y.dtype).eps
+        interior = y.clamp(-1 + eps, 1 - eps)
+        t = torch.log1p(interior) - torch.log1p(-interior)
+        log_dy_dt = torch.nn.functional.logsigmoid(t) + torch.nn.functional.logsigmoid(-t) + np.log(2)
+        reconstruction = (-decoded.log_prob(t) + log_dy_dt).sum(dim=-1).mean()
+        kl = torch.distributions.kl_divergence(posterior, prior).sum(dim=-1).mean()
         return reconstruction + beta * kl, reconstruction, kl
 
     def sample(self, x, count, generator):
         repeated = x[:, None, :].expand(-1, count, -1)
-        z = torch.randn((len(x), count, self.latent), generator=generator, device=x.device)
-        # The fixed reconstruction distribution matches the training objective.
-        means = self.decoder(torch.cat([repeated, z], dim=-1))
-        eps = torch.randn(means.shape, generator=generator, device=x.device)
-        return (means + .2 * eps).clamp(-1, 1)
+        prior_parameters = self.prior(x)[:, None, :].expand(-1, count, -1)
+        z = self.draw(self.normal(prior_parameters), generator)
+        decoded = self.normal(self.decoder(torch.cat([repeated, z], dim=-1)))
+        t = self.draw(decoded, generator)
+        return 2 * torch.sigmoid(t.double()) - 1
 
 
-def train_cvae(x, y, vx, vy, args):
+def train_cvae(x, y, vx, vy, args, *, validation_score=None, validation_every=1):
     torch.set_num_threads(1)
     torch.manual_seed(args.seed)
-    model = CVAE(x.shape[1], hidden=args.hidden, latent=args.latent)
+    model = CVAE(x.shape[1], hidden=args.hidden, latent=args.latent, target_dim=y.shape[1])
     train_generator = torch.Generator().manual_seed(args.seed + 500)
     val_generator = torch.Generator().manual_seed(args.seed + 600)
     loader = DataLoader(TensorDataset(torch.tensor(x, dtype=torch.float32), torch.tensor(y, dtype=torch.float32)),
@@ -92,23 +115,48 @@ def train_cvae(x, y, vx, vy, args):
     best, best_state, best_epoch = float('inf'), None, 0
     history = []
     for epoch in range(1, args.epochs + 1):
+        beta = args.beta
+        if args.kl_warmup_epochs:
+            beta *= min(epoch / args.kl_warmup_epochs, 1.0)
         model.train()
         for xb, yb in loader:
             optimizer.zero_grad()
-            loss, _, _ = model.loss(xb, yb, args.beta, train_generator)
+            loss, _, _ = model.loss(xb, yb, beta, train_generator)
             loss.backward()
             optimizer.step()
         model.eval()
-        # Reusing the same random draws makes epoch comparisons less noisy.
+        # Compare all epochs with the target beta and the same random draws.
         val_generator.manual_seed(args.seed + 600)
         with torch.no_grad():
             val, recon, kl = model.loss(vx, vy, args.beta, val_generator)
-        history.append({'epoch': epoch, 'validation_loss': float(val), 'reconstruction': float(recon), 'kl': float(kl)})
-        if float(val) < best:
-            best, best_epoch = float(val), epoch
+            score = float(val)
+            row = {'epoch': epoch, 'training_beta': beta, 'validation_loss': score,
+                   'reconstruction': float(recon), 'kl': float(kl)}
+            if validation_score is not None:
+                evaluate = epoch % validation_every == 0 or epoch == args.epochs
+                score = float(validation_score(model, vx, vy)) if evaluate else float('inf')
+                row['validation_energy_score'] = score if evaluate else None
+        history.append(row)
+        if score < best:
+            best, best_epoch = score, epoch
             best_state = {k: v.detach().clone() for k, v in model.state_dict().items()}
     model.load_state_dict(best_state)
     return model, history, best_epoch
+
+
+def diverse_u_indices(pool, by_fit):
+    """Keep the best fit, then spread u within the lowest-residual candidates."""
+    shortlist = by_fit[:U_DIVERSITY_SHORTLIST]
+    oxygen = pool[shortlist, 2]
+    chosen = [0]
+    distance = np.abs(oxygen - oxygen[0])
+    distance[0] = -np.inf
+    for _ in range(1, min(TOP_K, len(shortlist))):
+        index = int(distance.argmax())
+        chosen.append(index)
+        distance = np.minimum(distance, np.abs(oxygen - oxygen[index]))
+        distance[index] = -np.inf
+    return shortlist[chosen]
 
 
 def summarize(condition, method, candidates, truth, scores, seconds):
@@ -117,17 +165,30 @@ def summarize(condition, method, candidates, truth, scores, seconds):
     return {'condition': condition, 'method': method, 'n': len(truth),
             'mae_a': diff[:, 0, 0].mean(), 'mae_c': diff[:, 0, 1].mean(),
             'mae_u': diff[:, 0, 2].mean(), 'top1_hit_acu': hits[:, 0].mean(),
-            'top5_hit_acu': hits[:, :5].any(axis=1).mean(),
-            'top5_hit_ac': (diff[:, :5, :2] <= TOL[:2]).all(axis=-1).any(axis=1).mean(),
-            'top5_hit_u': (diff[:, :5, 2] <= TOL[2]).any(axis=1).mean(),
+            'top5_hit_acu': hits[:, :TOP_K].any(axis=1).mean(),
+            'top5_hit_ac': (diff[:, :TOP_K, :2] <= TOL[:2]).all(axis=-1).any(axis=1).mean(),
+            'top5_hit_u': (diff[:, :TOP_K, 2] <= TOL[2]).any(axis=1).mean(),
+            'top5_mean_u_span': np.ptp(candidates[:, :TOP_K, 2], axis=1).mean(),
             'top1_observed_mse': scores, 'online_seconds_per_sample': seconds / len(truth)}
+
+
+def summarize_pool(condition, method, pool, truth):
+    difference = np.abs(pool - truth[:, None, :])
+    # Divide by each half-range so units do not determine the energy score.
+    error = np.linalg.norm(difference / HALF, axis=-1).mean(axis=1)
+    spread = np.array([pdist(sample / HALF).mean() for sample in pool])
+    boundary = ((pool <= BOUNDS[:, 0] + 1e-12) | (pool >= BOUNDS[:, 1] - 1e-12)).mean(axis=(0, 1))
+    return {'condition': condition, 'method': method, 'n': len(truth), 'proposals': pool.shape[1],
+            'pool_hit_acu': (difference <= TOL).all(axis=-1).any(axis=1).mean(),
+            'energy_score_normalized': (error - spread / 2).mean(),
+            'boundary_rate_a': boundary[0], 'boundary_rate_c': boundary[1], 'boundary_rate_u': boundary[2]}
 
 
 def run(args):
     args.output.mkdir(parents=True, exist_ok=True)
     sim = ACUSimulator()
-    streams = np.random.SeedSequence(args.seed).spawn(6)
-    trng, vrng, terng, mrng, prng, grng = map(np.random.default_rng, streams)
+    streams = np.random.SeedSequence(args.seed).spawn(5)
+    trng, vrng, terng, mrng, prng = map(np.random.default_rng, streams)
     t0 = time.perf_counter()
     print('Generating train, validation, test spectra...', flush=True)
     train_y, train = split(sim, trng, args.train, args.noise)
@@ -150,30 +211,33 @@ def run(args):
     mdn_info = mdn.fit(x, y, vx, vy, mrng, args.mdn_iterations)
     mdn_info['seconds'] = time.perf_counter()-t0
     np.savez_compressed(args.output/'mdn_weights.npz', weights=mdn.weights)
-    print('Training cVAE on CPU...', flush=True)
+    print('Training CVAE on CPU...', flush=True)
     t0 = time.perf_counter()
     cvae, history, best_epoch = train_cvae(x, y, vx, vy, args)
-    cvae_seconds = time.perf_counter()-t0
-    torch.save({'state_dict': cvae.state_dict(), 'inputs': x.shape[1], 'hidden': args.hidden,
-                'latent': args.latent, 'center': CENTER, 'half_range': HALF}, args.output/'cvae.pt')
-    with (args.output/'cvae_history.csv').open('w', newline='') as f:
-        writer=csv.DictWriter(f, fieldnames=list(history[0])); writer.writeheader(); writer.writerows(history)
+    cvae_seconds = time.perf_counter() - t0
+    torch.save({'state_dict': cvae.state_dict(), 'inputs': x.shape[1],
+                'hidden': args.hidden, 'latent': args.latent, 'center': CENTER, 'half_range': HALF},
+               args.output / 'cvae.pt')
+    with (args.output / 'cvae_history.csv').open('w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=list(history[0]), lineterminator='\n')
+        writer.writeheader()
+        writer.writerows(history)
     grids, libraries, grid_seconds = {}, {}, {}
-    budget_shape = args.grid_shape if args.grid_shape else [args.grid_side] * 3
+    budget_shape = [BUDGET_GRID_SIDE] * 3
     for label, shape in [('grid_budget', budget_shape), ('grid_dense', [args.dense_side] * 3)]:
         axes = [np.linspace(lo, hi, side) for (lo, hi), side in zip(BOUNDS, shape)]
         grids[label] = np.stack(np.meshgrid(*axes, indexing='ij'), axis=-1).reshape(-1, 3)
         t0 = time.perf_counter(); libraries[label] = sim.profiles(grids[label]); grid_seconds[label] = time.perf_counter()-t0
     print(f'Evaluating {len(test_y)} held-out cells across three windows...', flush=True)
-    metrics, predictions = [], {}
-    sample_gen = torch.Generator().manual_seed(args.seed + 700)
+    metrics, pool_metrics, predictions = [], [], {}
+    sample_generator = torch.Generator().manual_seed(args.seed + 700)
     for name, obs in test.items():
         mask = MASKS[name]
         xt = features.transform({name: obs})
         for label, grid in grids.items():
             t0 = time.perf_counter()
             grid_scores = score_grid(obs, visible_profiles(libraries[label], mask), mask)
-            order = np.argsort(grid_scores, axis=1)[:, :5]
+            order = np.argsort(grid_scores, axis=1)[:, :TOP_K]
             grid_out = grid[order]
             elapsed = time.perf_counter()-t0
             metrics.append(summarize(name, label, grid_out, test_y, float(np.take_along_axis(grid_scores,order[:,:1],axis=1).mean()), elapsed))
@@ -181,33 +245,50 @@ def run(args):
         for method in ('mdn', 'cvae'):
             t0 = time.perf_counter()
             if method == 'mdn':
-                pool = mdn.sample(xt, args.proposals, prng)
+                pool = mdn.sample(xt, CANDIDATE_COUNT, prng)
             else:
                 with torch.no_grad():
-                    pool = CENTER + HALF*cvae.sample(torch.tensor(xt, dtype=torch.float32), args.proposals, sample_gen).numpy()
+                    samples = cvae.sample(torch.tensor(xt, dtype=torch.float32),
+                                          CANDIDATE_COUNT, sample_generator)
+                    pool = CENTER + HALF * samples.numpy()
             sampling_seconds = time.perf_counter()-t0
             t0=time.perf_counter()
             profiles = sim.profiles(pool.reshape(-1,3))
-            profiles = visible_profiles(profiles, mask).reshape(len(test_y), args.proposals, -1)
+            profiles = visible_profiles(profiles, mask).reshape(len(test_y), CANDIDATE_COUNT, -1)
             errors = np.mean((profiles-obs[:,None,mask])**2, axis=2)
-            ranked_idx = np.argsort(errors, axis=1)[:, :5]
+            by_fit = np.argsort(errors, axis=1)
+            ranked_idx = by_fit[:, :TOP_K]
             ranked = np.take_along_axis(pool, ranked_idx[:,:,None], axis=1)
             physics_seconds = time.perf_counter()-t0
-            raw=pool[:,:5]
+            t0 = time.perf_counter()
+            diverse_idx = np.stack([diverse_u_indices(candidates, order)
+                                    for candidates, order in zip(pool, by_fit)])
+            diverse = np.take_along_axis(pool, diverse_idx[:, :, None], axis=1)
+            diversity_seconds = time.perf_counter() - t0
+            raw = pool[:, :TOP_K]
+            best_mse = float(np.take_along_axis(errors, ranked_idx[:, :1], axis=1).mean())
             metrics.append(summarize(name, method, raw, test_y, float(errors[:,0].mean()), sampling_seconds))
-            metrics.append(summarize(name, method+'_physics', ranked, test_y,
-                                     float(np.take_along_axis(errors, ranked_idx[:,:1], axis=1).mean()),
+            metrics.append(summarize(name, method+'_physics', ranked, test_y, best_mse,
                                      sampling_seconds+physics_seconds))
+            metrics.append(summarize(name, method+'_diverse_u', diverse, test_y, best_mse,
+                                     sampling_seconds+physics_seconds+diversity_seconds))
+            pool_metrics.append(summarize_pool(name, method, pool, test_y))
             predictions[f'{name}_{method}_pool'] = pool
             predictions[f'{name}_{method}_pool_mse'] = errors
             predictions[f'{name}_{method}_physics'] = ranked
+            predictions[f'{name}_{method}_diverse_u'] = diverse
     with (args.output/'metrics.csv').open('w', newline='') as f:
-        writer=csv.DictWriter(f,fieldnames=list(metrics[0])); writer.writeheader(); writer.writerows(metrics)
+        writer=csv.DictWriter(f,fieldnames=list(metrics[0]),lineterminator='\n'); writer.writeheader(); writer.writerows(metrics)
+    with (args.output / 'proposal_metrics.csv').open('w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=list(pool_metrics[0]), lineterminator='\n')
+        writer.writeheader()
+        writer.writerows(pool_metrics)
     lookup = {(m['condition'], m['method']): m for m in metrics}
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.5), layout='constrained')
     names = list(MASKS)
-    methods = ['grid_budget', 'grid_dense', 'mdn', 'mdn_physics', 'cvae', 'cvae_physics']
-    loc = np.arange(len(names)); width = .13
+    methods = ['grid_budget', 'grid_dense', 'mdn', 'mdn_physics', 'mdn_diverse_u',
+               'cvae', 'cvae_physics', 'cvae_diverse_u']
+    loc = np.arange(len(names)); width = .10
     for i, method in enumerate(methods):
         pos = loc + (i - (len(methods)-1)/2)*width
         axes[0].bar(pos, [lookup[(n, method)]['mae_u'] for n in names], width, label=method)
@@ -220,17 +301,21 @@ def run(args):
     np.savez_compressed(args.output/'predictions.npz', **predictions)
     config = vars(args).copy(); config['output'] = str(config['output'])
     config.update({'bounds': BOUNDS.tolist(), 'tolerances': TOL.tolist(), 'windows_deg': WINDOWS,
+                   'proposals': CANDIDATE_COUNT, 'grid_shape': budget_shape,
+                   'u_diversity_shortlist': U_DIVERSITY_SHORTLIST,
                    'grid_candidates': {k: len(v) for k, v in grids.items()}, 'data_seconds': data_time, 'grid_precompute_seconds': grid_seconds,
-                   'mdn_training': mdn_info, 'cvae_training_seconds': cvae_seconds, 'cvae_best_epoch': best_epoch,
-                   'cvae_sampling': 'decoder mean plus fixed Gaussian noise, clipped to bounds',
+                   'mdn_training': mdn_info, 'cvae_training_seconds': cvae_seconds,
+                   'cvae_best_epoch': best_epoch, 'cvae_parameters': sum(p.numel() for p in cvae.parameters()),
+                   'cvae_sampling': 'conditional Gaussian prior and bounded logit-normal decoder',
                    'notes': 'Simulated rutile, independently uniform parameters, idealized simulator. CPU timing is hardware dependent.'})
     (args.output/'run.json').write_text(json.dumps(config, indent=2))
     print('Saved results to', args.output.resolve(), flush=True)
-    print('Times: data %.2fs, MDN %.2fs, cVAE %.2fs, grid banks %.2fs' % (data_time, mdn_info['seconds'], cvae_seconds, sum(grid_seconds.values())))
+    print('Times: data %.2fs, MDN %.2fs, CVAE %.2fs, grid banks %.2fs' %
+          (data_time, mdn_info['seconds'], cvae_seconds, sum(grid_seconds.values())))
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__)
+    p=argparse.ArgumentParser(description=f'{__doc__} Matched candidate budget: {CANDIDATE_COUNT}.')
     p.add_argument('--output',type=Path,default=Path(__file__).parent/'outputs'/'acu')
     p.add_argument('--seed',type=int,default=42)
     p.add_argument('--train',type=int,default=600); p.add_argument('--validation',type=int,default=80)
@@ -238,18 +323,19 @@ def main():
     p.add_argument('--epochs',type=int,default=80); p.add_argument('--batch-size',type=int,default=64)
     p.add_argument('--hidden',type=int,default=64); p.add_argument('--latent',type=int,default=4)
     p.add_argument('--lr',type=float,default=.001); p.add_argument('--beta',type=float,default=1.)
-    p.add_argument('--mdn-iterations',type=int,default=120); p.add_argument('--proposals',type=int,default=27)
-    p.add_argument('--grid-side',type=int,default=3)
-    p.add_argument('--grid-shape',type=int,nargs=3,metavar=('NA','NC','NU'),help='Budget grid points per parameter; product must equal proposals')
+    p.add_argument('--kl-warmup-epochs', type=int, default=0,
+                   help='Increase the training KL weight linearly over this many epochs (default: disabled)')
+    p.add_argument('--mdn-iterations',type=int,default=120)
     p.add_argument('--dense-side',type=int,default=9)
     args=p.parse_args()
     if min(args.train,args.validation,args.test,args.epochs,args.batch_size,args.hidden,args.latent,args.mdn_iterations) < 1 or args.seed < 0:
         p.error('Counts must be positive and seed must be nonnegative')
-    shape = args.grid_shape if args.grid_shape else [args.grid_side] * 3
-    if args.proposals < 5 or min(shape) < 2 or args.dense_side < max(shape) or not np.isfinite(args.noise) or args.noise < 0 or not np.isfinite(args.lr) or args.lr <= 0 or not np.isfinite(args.beta) or args.beta < 0:
-        p.error('Invalid proposals, grid, noise, learning rate, or beta')
-    if np.prod(shape) != args.proposals:
-        p.error('For matched candidate budgets, proposals must equal the grid shape product')
+    if args.dense_side < BUDGET_GRID_SIDE:
+        p.error(f'Dense grid must have at least {BUDGET_GRID_SIDE} points per axis')
+    if not 0 <= args.kl_warmup_epochs <= args.epochs:
+        p.error('KL warm-up must be between 0 and the number of training epochs')
+    if not np.isfinite(args.noise) or args.noise < 0 or not np.isfinite(args.lr) or args.lr <= 0 or not np.isfinite(args.beta) or args.beta < 0:
+        p.error('Invalid noise, learning rate, or beta')
     with threadpool_limits(limits=1): run(args)
 
 

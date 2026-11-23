@@ -1,0 +1,86 @@
+task,track,view,method,training_suite,training_seed,inference_seed,purpose,condition,in_primary,mean_relative_error_percent,energy_score,success_0.5pct_percent
+rutile,blind,full,PriorSampler,unspecified,,0,negative_control,block30,True,2.5572655603344057,0.2633703973981857,0.5859375
+rutile,blind,full,PriorSampler,unspecified,,0,negative_control,block50,True,2.5340605228355586,0.262128249087737,1.5625
+rutile,blind,full,PriorSampler,unspecified,,0,negative_control,broad_ood,False,2.53645253541065,0.2628273314610816,1.171875
+rutile,blind,full,PriorSampler,unspecified,,0,negative_control,drop30_ood,False,2.536511262772958,0.26215533645555805,1.953125
+rutile,blind,full,PriorSampler,unspecified,,0,negative_control,full_high,True,2.5485632394973305,0.26248559420337003,1.5625
+rutile,blind,full,PriorSampler,unspecified,,0,negative_control,full_low,True,2.549920594553309,0.26193160885764216,0.9765625
+rutile,blind,full,PriorSampler,unspecified,,0,negative_control,full_standard,True,2.5513834588024946,0.26349443271303197,1.171875
+rutile,blind,full,PriorSampler,unspecified,,0,negative_control,hard_mixed_e100,True,2.5485454637367146,0.262156166118228,1.171875
+rutile,blind,full,PriorSampler,unspecified,,0,negative_control,hard_mixed_e1000,True,2.5424271802579455,0.261590763089497,1.171875
+rutile,blind,full,PriorSampler,unspecified,,0,negative_control,hard_mixed_e300,True,2.540718533650981,0.2627222139938954,1.5625
+rutile,blind,full,PriorSampler,unspecified,,0,negative_control,hard_paired_e100,True,2.5457147507208053,0.26180235132837726,1.171875
+rutile,blind,full,PriorSampler,unspecified,,0,negative_control,hard_paired_e1000,True,2.5266094182132446,0.26175599616808326,1.5625
+rutile,blind,full,PriorSampler,unspecified,,0,negative_control,hard_paired_e300,True,2.5655132938297465,0.26414933245827,1.171875
+rutile,blind,full,PriorSampler,unspecified,,0,negative_control,no_signal_stress,False,2.5544248857863523,0.26290564774063235,1.5625
+rutile,blind,full,PriorSampler,unspecified,,0,negative_control,voigt_ood,False,2.5396600329288526,0.2625033566737661,1.171875
+rutile,blind,full,PriorSampler,unspecified,,0,negative_control,window25_45,True,2.5308813136292283,0.2618688387583489,0.5859375
+rutile,blind,full,PriorSampler,unspecified,,0,negative_control,window26_30_stress,False,2.5370343600872474,0.2623912960055894,1.3671875
+rutile,blind,full,AIST MDN,v0.1+v0.2,0,0,submitted_method,block30,True,0.8456538405850456,0.09634476128694897,24.8046875
+rutile,blind,full,AIST MDN,v0.1+v0.2,0,0,submitted_method,block50,True,1.2186732638869948,0.13614759380277128,18.9453125
+rutile,blind,full,AIST MDN,v0.1+v0.2,0,0,submitted_method,broad_ood,False,0.42680640898454136,0.05026971456149553,45.5078125
+rutile,blind,full,AIST MDN,v0.1+v0.2,0,0,submitted_method,drop30_ood,False,0.7632119125392406,0.10393057435786408,27.9296875
+rutile,blind,full,AIST MDN,v0.1+v0.2,0,0,submitted_method,full_high,True,0.22073605321368756,0.025231921612810237,82.2265625
+rutile,blind,full,AIST MDN,v0.1+v0.2,0,0,submitted_method,full_low,True,0.40855949383463047,0.04881173842056688,52.34375
+rutile,blind,full,AIST MDN,v0.1+v0.2,0,0,submitted_method,full_standard,True,0.24376789894878215,0.028015693224477528,76.3671875
+rutile,blind,full,AIST MDN,v0.1+v0.2,0,0,submitted_method,hard_mixed_e100,True,1.2757080764480015,0.14304138149222217,15.234375
+rutile,blind,full,AIST MDN,v0.1+v0.2,0,0,submitted_method,hard_mixed_e1000,True,1.1177774275672534,0.12627076158057512,19.7265625
+rutile,blind,full,AIST MDN,v0.1+v0.2,0,0,submitted_method,hard_mixed_e300,True,1.138125179371575,0.12697709761965612,16.9921875
+rutile,blind,full,AIST MDN,v0.1+v0.2,0,0,submitted_method,hard_paired_e100,True,0.5662330630511372,0.06329944852941716,33.3984375
+rutile,blind,full,AIST MDN,v0.1+v0.2,0,0,submitted_method,hard_paired_e1000,True,0.5162931978182095,0.05771183242581145,39.0625
+rutile,blind,full,AIST MDN,v0.1+v0.2,0,0,submitted_method,hard_paired_e300,True,0.5309970254876575,0.059250535006960266,40.234375
+rutile,blind,full,AIST MDN,v0.1+v0.2,0,0,submitted_method,no_signal_stress,False,2.942921051705201,0.35525838813428134,1.171875
+rutile,blind,full,AIST MDN,v0.1+v0.2,0,0,submitted_method,voigt_ood,False,0.35144407779810893,0.04103438342252995,58.0078125
+rutile,blind,full,AIST MDN,v0.1+v0.2,0,0,submitted_method,window25_45,True,0.2812258135623557,0.03233868563723191,73.2421875
+rutile,blind,full,AIST MDN,v0.1+v0.2,0,0,submitted_method,window26_30_stress,False,1.7003947648450997,0.22816663291341457,6.25
+rutile,blind,full,AIST CVAE fixed KL,v0.1+v0.2,0,0,submitted_method,block30,True,0.5434435744303046,0.06423723881524511,51.7578125
+rutile,blind,full,AIST CVAE fixed KL,v0.1+v0.2,0,0,submitted_method,block50,True,0.8818890084889524,0.10324367879829585,35.3515625
+rutile,blind,full,AIST CVAE fixed KL,v0.1+v0.2,0,0,submitted_method,broad_ood,False,0.2535314246312276,0.029566296965145948,80.46875
+rutile,blind,full,AIST CVAE fixed KL,v0.1+v0.2,0,0,submitted_method,drop30_ood,False,0.7302888022589269,0.09657663723735294,41.796875
+rutile,blind,full,AIST CVAE fixed KL,v0.1+v0.2,0,0,submitted_method,full_high,True,0.22392881956906371,0.026177725193263085,86.328125
+rutile,blind,full,AIST CVAE fixed KL,v0.1+v0.2,0,0,submitted_method,full_low,True,0.26524096170424016,0.0314491267481458,73.046875
+rutile,blind,full,AIST CVAE fixed KL,v0.1+v0.2,0,0,submitted_method,full_standard,True,0.19438283611950885,0.0225319559790462,87.6953125
+rutile,blind,full,AIST CVAE fixed KL,v0.1+v0.2,0,0,submitted_method,hard_mixed_e100,True,1.3678300835431778,0.15008855246051087,11.5234375
+rutile,blind,full,AIST CVAE fixed KL,v0.1+v0.2,0,0,submitted_method,hard_mixed_e1000,True,1.1647906583807923,0.12865935998935712,19.921875
+rutile,blind,full,AIST CVAE fixed KL,v0.1+v0.2,0,0,submitted_method,hard_mixed_e300,True,1.2151669004904067,0.1340189645773208,18.5546875
+rutile,blind,full,AIST CVAE fixed KL,v0.1+v0.2,0,0,submitted_method,hard_paired_e100,True,0.4857772998020935,0.05631561584234386,44.921875
+rutile,blind,full,AIST CVAE fixed KL,v0.1+v0.2,0,0,submitted_method,hard_paired_e1000,True,0.4023147805458118,0.04709275340271431,54.296875
+rutile,blind,full,AIST CVAE fixed KL,v0.1+v0.2,0,0,submitted_method,hard_paired_e300,True,0.4355051017948055,0.0501001941488622,49.4140625
+rutile,blind,full,AIST CVAE fixed KL,v0.1+v0.2,0,0,submitted_method,no_signal_stress,False,2.8633603826287928,0.36079238511283285,0.78125
+rutile,blind,full,AIST CVAE fixed KL,v0.1+v0.2,0,0,submitted_method,voigt_ood,False,0.21613494732446,0.024856773169312382,87.5
+rutile,blind,full,AIST CVAE fixed KL,v0.1+v0.2,0,0,submitted_method,window25_45,True,0.21131729713725675,0.025044241829508977,85.546875
+rutile,blind,full,AIST CVAE fixed KL,v0.1+v0.2,0,0,submitted_method,window26_30_stress,False,1.9060140103150203,0.22639717809878376,1.953125
+rutile,blind,full,AIST CVAE KL warmup 30,v0.1+v0.2,0,0,submitted_method,block30,True,0.4861384144764452,0.05692225925845293,55.078125
+rutile,blind,full,AIST CVAE KL warmup 30,v0.1+v0.2,0,0,submitted_method,block50,True,0.7930063024208974,0.09374412350358562,35.7421875
+rutile,blind,full,AIST CVAE KL warmup 30,v0.1+v0.2,0,0,submitted_method,broad_ood,False,0.21170149425215806,0.024559834989816905,87.5
+rutile,blind,full,AIST CVAE KL warmup 30,v0.1+v0.2,0,0,submitted_method,drop30_ood,False,0.7640681512445912,0.10149242796760011,40.8203125
+rutile,blind,full,AIST CVAE KL warmup 30,v0.1+v0.2,0,0,submitted_method,full_high,True,0.23222995381970735,0.028245167073701956,82.6171875
+rutile,blind,full,AIST CVAE KL warmup 30,v0.1+v0.2,0,0,submitted_method,full_low,True,0.23861048083231978,0.027800966690109275,82.8125
+rutile,blind,full,AIST CVAE KL warmup 30,v0.1+v0.2,0,0,submitted_method,full_standard,True,0.18805720087717112,0.022471149317854516,89.84375
+rutile,blind,full,AIST CVAE KL warmup 30,v0.1+v0.2,0,0,submitted_method,hard_mixed_e100,True,1.217326127236345,0.13351843956036968,19.3359375
+rutile,blind,full,AIST CVAE KL warmup 30,v0.1+v0.2,0,0,submitted_method,hard_mixed_e1000,True,1.0715799188698014,0.11577648958998049,28.90625
+rutile,blind,full,AIST CVAE KL warmup 30,v0.1+v0.2,0,0,submitted_method,hard_mixed_e300,True,1.091152750193165,0.11890721151078221,23.2421875
+rutile,blind,full,AIST CVAE KL warmup 30,v0.1+v0.2,0,0,submitted_method,hard_paired_e100,True,0.3935189649377412,0.04441591341008864,59.5703125
+rutile,blind,full,AIST CVAE KL warmup 30,v0.1+v0.2,0,0,submitted_method,hard_paired_e1000,True,0.32908239219728946,0.03733362780545983,70.1171875
+rutile,blind,full,AIST CVAE KL warmup 30,v0.1+v0.2,0,0,submitted_method,hard_paired_e300,True,0.34429241354712503,0.03906767462865809,65.234375
+rutile,blind,full,AIST CVAE KL warmup 30,v0.1+v0.2,0,0,submitted_method,no_signal_stress,False,3.501229270153526,0.4243890425332646,1.171875
+rutile,blind,full,AIST CVAE KL warmup 30,v0.1+v0.2,0,0,submitted_method,voigt_ood,False,0.20090778292923003,0.023282398709255674,88.28125
+rutile,blind,full,AIST CVAE KL warmup 30,v0.1+v0.2,0,0,submitted_method,window25_45,True,0.1783174115807466,0.020807305644545193,91.6015625
+rutile,blind,full,AIST CVAE KL warmup 30,v0.1+v0.2,0,0,submitted_method,window26_30_stress,False,2.0789284293450323,0.25037950879255916,2.9296875
+rutile,blind,full,Blind grid 21x21 / 32 nuisance draws,none,,0,approximate_physics_grid_diagnostic,block30,True,0.1286592866805245,0.019781817111395962,100.0
+rutile,blind,full,Blind grid 21x21 / 32 nuisance draws,none,,0,approximate_physics_grid_diagnostic,block50,True,0.13442351133796585,0.020699387567046926,98.828125
+rutile,blind,full,Blind grid 21x21 / 32 nuisance draws,none,,0,approximate_physics_grid_diagnostic,broad_ood,False,0.13212423524799677,0.02035292953243751,100.0
+rutile,blind,full,Blind grid 21x21 / 32 nuisance draws,none,,0,approximate_physics_grid_diagnostic,drop30_ood,False,0.13271693899590983,0.020413074081252106,99.609375
+rutile,blind,full,Blind grid 21x21 / 32 nuisance draws,none,,0,approximate_physics_grid_diagnostic,full_high,True,0.12742947492974233,0.019595434568850927,100.0
+rutile,blind,full,Blind grid 21x21 / 32 nuisance draws,none,,0,approximate_physics_grid_diagnostic,full_low,True,0.12740292153140126,0.019575067591718787,100.0
+rutile,blind,full,Blind grid 21x21 / 32 nuisance draws,none,,0,approximate_physics_grid_diagnostic,full_standard,True,0.12703895995311087,0.019526117292970595,100.0
+rutile,blind,full,Blind grid 21x21 / 32 nuisance draws,none,,0,approximate_physics_grid_diagnostic,hard_mixed_e100,True,0.7055125398930018,0.07543080191561095,48.046875
+rutile,blind,full,Blind grid 21x21 / 32 nuisance draws,none,,0,approximate_physics_grid_diagnostic,hard_mixed_e1000,True,0.6057451791799484,0.07544865252719009,56.4453125
+rutile,blind,full,Blind grid 21x21 / 32 nuisance draws,none,,0,approximate_physics_grid_diagnostic,hard_mixed_e300,True,0.5615395238742867,0.062236680823473,56.25
+rutile,blind,full,Blind grid 21x21 / 32 nuisance draws,none,,0,approximate_physics_grid_diagnostic,hard_paired_e100,True,0.18818817493803205,0.024722766552005136,92.578125
+rutile,blind,full,Blind grid 21x21 / 32 nuisance draws,none,,0,approximate_physics_grid_diagnostic,hard_paired_e1000,True,0.17966012996034683,0.027447350269770538,93.359375
+rutile,blind,full,Blind grid 21x21 / 32 nuisance draws,none,,0,approximate_physics_grid_diagnostic,hard_paired_e300,True,0.18016877078502896,0.02605409300993377,92.7734375
+rutile,blind,full,Blind grid 21x21 / 32 nuisance draws,none,,0,approximate_physics_grid_diagnostic,no_signal_stress,False,2.5415216928525908,0.261543246193477,1.3671875
+rutile,blind,full,Blind grid 21x21 / 32 nuisance draws,none,,0,approximate_physics_grid_diagnostic,voigt_ood,False,0.12833430548042002,0.019726435310857923,100.0
+rutile,blind,full,Blind grid 21x21 / 32 nuisance draws,none,,0,approximate_physics_grid_diagnostic,window25_45,True,0.13142800846494634,0.020228966074947233,100.0
+rutile,blind,full,Blind grid 21x21 / 32 nuisance draws,none,,0,approximate_physics_grid_diagnostic,window26_30_stress,False,1.364163126319572,0.1717540054873016,8.3984375

@@ -1,0 +1,75 @@
+{
+  "output": "outputs/acu_matched216/seed-44",
+  "seed": 44,
+  "train": 1800,
+  "validation": 240,
+  "test": 160,
+  "noise": 0.01,
+  "epochs": 150,
+  "batch_size": 64,
+  "hidden": 64,
+  "latent": 4,
+  "lr": 0.001,
+  "beta": 1.0,
+  "mdn_iterations": 260,
+  "proposals": 216,
+  "grid_shape": [
+    6,
+    6,
+    6
+  ],
+  "dense_side": 41,
+  "bounds": [
+    [
+      4.5,
+      4.69
+    ],
+    [
+      2.9,
+      3.02
+    ],
+    [
+      0.2953,
+      0.3153
+    ]
+  ],
+  "tolerances": [
+    0.02,
+    0.02,
+    0.002
+  ],
+  "windows_deg": {
+    "full": [
+      20,
+      70
+    ],
+    "low_information": [
+      24,
+      33
+    ],
+    "contrast": [
+      33,
+      42
+    ]
+  },
+  "grid_candidates": {
+    "grid_budget": 216,
+    "grid_dense": 68921
+  },
+  "data_seconds": 1.1588622919516638,
+  "grid_precompute_seconds": {
+    "grid_budget": 0.11958299996331334,
+    "grid_dense": 39.23599929199554
+  },
+  "mdn_training": {
+    "iterations": 260,
+    "termination": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+    "validation_nll_normalized": -2.6078982511612385,
+    "seconds": 2.1130869169719517
+  },
+  "cvae_training_seconds": 10.545666999998502,
+  "cvae_best_epoch": 31,
+  "cvae_parameters": 54294,
+  "cvae_sampling": "conditional Gaussian prior and bounded logit-normal decoder",
+  "notes": "Simulated rutile, independently uniform parameters, idealized simulator. CPU timing is hardware dependent."
+}

@@ -1,0 +1,7 @@
+condition,method,n,proposals,pool_hit_acu,energy_score_normalized,boundary_rate_a,boundary_rate_c,boundary_rate_u
+full,mdn,160,216,1.0,0.3135663512479012,0.0,0.0,0.0
+full,cvae,160,216,1.0,0.3050330935280954,0.0,0.0,0.0
+low_information,mdn,160,216,1.0,0.5090954817098958,0.0,0.0,0.0
+low_information,cvae,160,216,1.0,0.5056981530538593,0.0,0.0,0.0
+contrast,mdn,160,216,1.0,0.30724676496531644,0.0,0.0,0.0
+contrast,cvae,160,216,1.0,0.21673756825652318,0.0,0.0,0.0
