@@ -1,0 +1,42 @@
+{
+  "method_name": "AIST CVAE KL warmup 30 + Conv1D",
+  "implementation": "AIST5040_12 architecture retrained for rutile (a,c)",
+  "training_dataset_id": "73a358b50688e514a8d7f95d45069edc70a5c23bcbd2ab5b9127cef3b62111c3",
+  "training_suite": "v0.1+v0.2",
+  "training_seed": 0,
+  "unique_train_structures": 5000,
+  "train_observations": 10000,
+  "extra_simulations": 0,
+  "external_pretraining": false,
+  "postprocessing": "none",
+  "hardware": "local CPU, one training thread",
+  "checkpoint_selection": "validation Energy, 32 fixed-seed draws per observation, evaluated every 5 steps",
+  "hyperparameters": {
+    "epochs": 80,
+    "mdn_iterations": 260,
+    "batch_size": 64,
+    "hidden": 64,
+    "latent": 4,
+    "lr": 0.001,
+    "beta": 1.0,
+    "kl_warmup_epochs": 30,
+    "spectrum_bins": 256,
+    "encoder": "conv"
+  },
+  "source_sha256": {
+    "xrdbench_acu.py": "93c8d9da9106409d03293b7fecb60846e58cd0eb74cc2a5a7d956e4e6925b225",
+    "models.py": "0bddf1df2d7830bf7d097bdffb2ab4a3fcc940c86fc64c2ec7005af27b7c7a4a",
+    "acu_benchmark.py": "35bdecd209d45814d7da65b00d41dd9ecbdc105fe2f866d4d4a27f4e078fcc24"
+  },
+  "best_epoch": 30,
+  "validation": {
+    "epoch": 30,
+    "training_beta": 1.0,
+    "validation_loss": -3.3307554721832275,
+    "reconstruction": -3.5542633533477783,
+    "kl": 0.22350795567035675,
+    "validation_energy_score": 0.026762858618122123
+  },
+  "trainable_parameters": 164044,
+  "training_wall_seconds": 90.85675116698258
+}

@@ -113,58 +113,8 @@ python predict_acu.py your_spectrum.csv --window full --method cvae \
 
 ## 接入组内 xrdbench
 
-相邻的 [`xrd_inverse`](../xrd_inverse/README.md) 统一模拟数据、训练与测试划分、提交格式和评分。其金红石任务估计 a、c，固定氧坐标 u = 0.305。盲测提供计数谱、观测掩码和曝光，隐藏仪器参数。后验提交要求每条谱提供 256 个未重排的样本，由 evaluator 用样本边缘中位数评估点误差，并评估 Energy Score、区间覆盖率等分布指标。该赛道的共享评分器目前不支持物理重排。 [联合评测协议](../xrd_inverse/docs/v0.2实验协议.md)
+[`xrd_inverse`](../xrd_inverse/README.md) 使用固定氧坐标的金红石模拟谱，评估晶格参数 a、c。盲测提供 XRD 计数、掩码与曝光，仪器参数保持未知。数据按晶胞划分为训练、验证和测试。
 
-[`xrdbench_acu.py`](xrdbench_acu.py) 提供两个接入口。
+当前接入使用卷积 MDN 和卷积 CVAE。两者使用相同结构的谱编码器，并分别训练。组件支持单点、256 个原始后验样本、64 个候选及其首选三种提交方式。详细参数、结果、组员基线对照和复跑命令见 [主 README](README.md#当前版本结果)。
 
-- `FrozenAdapter` 将观测谱对齐到原项目的 20–70° 谱轴，用旧权重生成 (a, c, u) 后只输出 (a, c)，保留旧模型的参数范围。该对照用于检查直接迁移。
-- `Adapter` 读取在 xrdbench public/train 和 public/val 上重新训练的二维模型。CVAE、MDN 使用相同的谱分箱、观测掩码、曝光特征和数据划分。用验证集 Energy Score 选检查点，每条观测使用 32 个固定随机样本。提交和打分分别调用 xrdbench 的 `run` 与 `score`。
-
-本地联合 pilot 使用训练种子 0、5,000 个训练结构和 512 个保留测试结构。目录里提供了发布索引，本次数据由组件本地生成，软件依赖和 dataset_id 与正式发布不同。正式组内比较应使用协调者发布的同一份 public 数据，并由协调者读取 private/test 评分。
-
-```bash
-export PYTHONPATH="../xrd_inverse:$PYTHONPATH"
-XRD_PUBLIC=/path/to/rutile/blind/v0.1+v0.2/public
-python -m xrdbench_acu --public "$XRD_PUBLIC" --method cvae \
-  --kl-warmup-epochs 30 --output outputs/shared_cvae
-python -m xrdbench.cli run --public "$XRD_PUBLIC" --adapter xrdbench_acu:Adapter \
-  --checkpoint outputs/shared_cvae/model.pt --metadata outputs/shared_cvae/metadata.json \
-  --kind posterior --output outputs/shared_cvae_prediction
-```
-
-| 本地联合 pilot，盲测 | 平均相对误差 ↓ | 0.5% 联合成功率 ↑ | Energy Score ↓ |
-|---|---:|---:|---:|
-| 旧 MDN 权重直接迁移 | 2.076% | 9.16% | 0.30009 |
-| 旧 CVAE 权重直接迁移 | 1.976% | 9.55% | 0.27990 |
-| 旧 CVAE 预热权重直接迁移 | 1.960% | 9.38% | 0.27933 |
-| MDN 重新训练 | 0.697% | 41.05% | 0.07862 |
-| CVAE 重新训练 | 0.616% | 51.53% | 0.06991 |
-| CVAE 重新训练并预热 30 轮 | 0.547% | 58.68% | 0.06158 |
-
-后验样本数诊断使用相同样本流的前缀。预热 CVAE 从 64 增至 216 个原始样本时，平均相对误差从 0.553% 变为 0.548%，Energy Score 接近 0.0616。原三参数实验中的预算诊断同样使用既有 216 个候选的前缀，并在每个预算内重新排序。它衡量的是物理评分预算。
-
-[组件完整评分报告](results/xrdbench/report/report.md) · [候选数诊断（组内后验）](results/xrdbench/posterior_sample_budget.csv) · [候选数诊断（原三参数物理重排）](results/xrdbench/acu_rerank_budget.csv)
-
-### CVAE 与 MDN 的三种提交格式
-
-保持同一盲测 pilot 和重训后的模型权重，分别用 `xrdbench_acu:PointAdapter --kind point`、`xrdbench_acu:Adapter --kind posterior`、`xrdbench_acu:CandidateAdapter --kind candidates` 接入 `xrdbench run`。单点取 256 次抽样的边缘中位数，与组件给后验计算点误差时使用的是同一个值。候选集合抽 64 组，按各参数以先验半宽归一化后到样本中位数的绝对距离之和排序，并提交首位作为点预测。候选排序只使用模型的预测样本。
-
-| 格式 | MDN 联合平均相对误差 | CVAE 预热联合平均相对误差 | MDN 首选命中率 | CVAE 预热首选命中率 |
-|---|---:|---:|---:|---:|
-| 单点 | 0.697% | 0.547% | 41.05% | 58.68% |
-| 256 后验样本 | 0.697% | 0.547% | 41.05% | 58.68% |
-| 64 候选及首选 | 0.705% | 0.556% | 40.20% | 57.86% |
-
-命中要求 a、c 的相对误差都不超过 0.5%。64 个候选中至少有一组命中的比例是 MDN 91.89%、预热 CVAE 98.19%，该指标借助测试真值检查候选池。256 样本的 Energy Score 分别为 0.07862 和 0.06158。 [三种格式的分域指标](results/xrdbench/report_three_formats/formats.csv)
-
-### 同一盲测集的网格对照
-
-组件内置的 `reference-grid` 需要已公开的仪器参数。在同一盲测 pilot 上，[`xrdbench_blind_grid.py`](xrdbench_blind_grid.py) 在 21×21 个 (a, c) 格点上对计数谱评分。每个格点用 32 组从公开仪器参数先验抽出的设置平均似然，再从加权网格抽取协议所需的 256 个预测样本。已知的观测掩码决定使用哪个公开先验。此对照给出了近似网格结果，尚未做网格和仪器参数积分的收敛验证。
-
-| 方法 | 联合平均相对误差 ↓ | 0.5% 联合成功率 ↑ | Energy Score ↓ | 90% 区间实际覆盖率 |
-|---|---:|---:|---:|---:|
-| 盲测近似网格 | 0.266% | 86.52% | 0.03423 | 16.4% |
-| CVAE 预热 | 0.547% | 58.68% | 0.06158 | 88.7% |
-| MDN | 0.697% | 41.05% | 0.07862 | 84.3% |
-
-区间覆盖率为 a、c 两个边缘区间的平均值，目标接近 90%。粗网格的权重集中在少数离散格点上，区间覆盖偏低。此次本地运行中，网格预计算约 9.7 秒，在线约 0.99 ms/谱，预热 CVAE 约 0.15 ms/谱。 [含网格的组件评分报告](results/xrdbench/report_with_grid/report.md)
+正式 rutile 盲测联合 pilot 的数据指纹为 `73a358b50688e514a8d7f95d45069edc70a5c23bcbd2ab5b9127cef3b62111c3`。预测使用训练集训练、验证集选检查点，由组件对测试集评分。 [完整结果](results/xrdbench_official/shared_conv/comparison.csv) · [数据版本](results/xrdbench_official/dataset.json)

@@ -1,0 +1,73 @@
+{
+  "revision": "a7f5ce0c62d7fc5f50f1c2ce2d34b23f2e58a3d2",
+  "release": {
+    "task": "rutile",
+    "track": "blind",
+    "suite": "v0.1+v0.2",
+    "dataset_id": "73a358b50688e514a8d7f95d45069edc70a5c23bcbd2ab5b9127cef3b62111c3",
+    "relative_path": "rutile/blind/v0.1+v0.2",
+    "generator": {
+      "package": "0.2.0",
+      "source_sha256": "9da4cbb07c21370396ed7ef0c1fb50fe9a037779d21fa5f989769105eff52bd9",
+      "python": "3.11.2",
+      "versions": {
+        "numpy": "1.26.4",
+        "scipy": "1.14.1",
+        "pymatgen": "2024.11.13",
+        "spglib": "2.5.0",
+        "monty": "2024.10.21"
+      }
+    },
+    "sizes": {
+      "train": {
+        "structure_count": 5000,
+        "observation_count": 10000
+      },
+      "val": {
+        "structure_count": 512,
+        "observation_count": 6144
+      },
+      "test": {
+        "structure_count": 512,
+        "observation_count": 8704
+      }
+    },
+    "hf_config": "rutile-blind-v01-v02",
+    "archive": {
+      "path": "archives/rutile-blind-v01-v02.tar.gz",
+      "sha256": "e81e16a41db46d9693b97cb7cb6a2874f875219864520934a3a437109d9161d3",
+      "bytes": 37561191,
+      "expanded_file_bytes": 40416893,
+      "file_count": 199
+    },
+    "metadata_path": "metadata/rutile-blind-v01-v02/manifest.json",
+    "parquet": {
+      "train": {
+        "path": "parquet/rutile-blind-v01-v02/train.parquet",
+        "sha256": "6d39bcb18a0af56b4669b0aa2c6ba39b3c32713196c8f9c4b71b4b363d69a775",
+        "bytes": 11941070,
+        "rows": 10000,
+        "structures": 5000,
+        "all_columns_roundtrip_exact": true
+      },
+      "validation": {
+        "path": "parquet/rutile-blind-v01-v02/validation.parquet",
+        "sha256": "9cf62d723b4f07b11e1e00efce1efe3f7f98ec27521020e8fb7a3a5b641e01de",
+        "bytes": 7457950,
+        "rows": 6144,
+        "structures": 512,
+        "all_columns_roundtrip_exact": true
+      },
+      "test": {
+        "path": "parquet/rutile-blind-v01-v02/test.parquet",
+        "sha256": "9985481bce85b553fe5eed851dd973d82f469b421adcd087c2b6b1e4e34c26cf",
+        "bytes": 11972267,
+        "rows": 8704,
+        "structures": 512,
+        "all_columns_roundtrip_exact": true
+      }
+    }
+  },
+  "evaluator_commit": "5479a41",
+  "evaluator_version": "0.2.1"
+}

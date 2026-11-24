@@ -102,10 +102,10 @@ class CVAE(nn.Module):
         return 2 * torch.sigmoid(t.double()) - 1
 
 
-def train_cvae(x, y, vx, vy, args, *, validation_score=None, validation_every=1):
+def train_cvae(x, y, vx, vy, args, *, validation_score=None, validation_every=1, model_class=CVAE):
     torch.set_num_threads(1)
     torch.manual_seed(args.seed)
-    model = CVAE(x.shape[1], hidden=args.hidden, latent=args.latent, target_dim=y.shape[1])
+    model = model_class(x.shape[1], hidden=args.hidden, latent=args.latent, target_dim=y.shape[1])
     train_generator = torch.Generator().manual_seed(args.seed + 500)
     val_generator = torch.Generator().manual_seed(args.seed + 600)
     loader = DataLoader(TensorDataset(torch.tensor(x, dtype=torch.float32), torch.tensor(y, dtype=torch.float32)),
